@@ -34,6 +34,18 @@ public class BlurOpenCl {
         }
     }
 
+    private static long round(long groupSize, long globalSize)
+    {
+        long r = globalSize % groupSize;
+        if(r == 0)
+        {
+            return globalSize;
+        } else
+        {
+            return globalSize + groupSize - r;
+        }
+    }
+
     public static void main(String[] args) {
         try {
             String kernelFileName = "kernels/TestKernel.cu";
@@ -133,8 +145,12 @@ public class BlurOpenCl {
                     Sizeof.cl_mem, Pointer.to(memObjects[2]));
 
             // Set the work-item dimensions
-            long global_work_size[] = new long[]{w, h};
-            long local_work_size[] = new long[]{3, 3};
+            long local_work_size[] = new long[]{32, 32};
+            long global_work_size[] = new long[]{
+                    round(local_work_size[0], w),
+                    round(local_work_size[1], h)
+            };
+
 
             // Execute the kernel
             clEnqueueNDRangeKernel(commandQueue, kernel, 2, null,
